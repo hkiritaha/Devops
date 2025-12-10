@@ -80,8 +80,20 @@ pipeline {
             }
             post {
                 always {
-                    // Publier les résultats des tests même en cas d'échec
-                    junit 'target/surefire-reports/*.xml'
+                    script {
+                        // Publier les résultats des tests seulement si les fichiers existent
+                        try {
+                            def reportFiles = sh(returnStdout: true, script: 'ls target/surefire-reports/*.xml 2>/dev/null || echo ""').trim()
+                            if (reportFiles) {
+                                echo "📊 Publication des rapports de tests..."
+                                junit 'target/surefire-reports/*.xml'
+                            } else {
+                                echo "⚠️ Aucun rapport de test trouvé (les tests n'ont peut-être pas pu compiler)"
+                            }
+                        } catch (Exception e) {
+                            echo "⚠️ Impossible de publier les rapports de tests: ${e.message}"
+                        }
+                    }
                 }
                 success {
                     echo '✅ Tous les tests sont passés!'
