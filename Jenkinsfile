@@ -10,6 +10,12 @@ pipeline {
         PROJECT_NAME = 'timesheet-devops'
         MAVEN_OPTS = '-Xmx1024m'
         BUILD_TIMESTAMP = "${new Date().format('yyyy-MM-dd HH:mm:ss')}"
+        // Configuration Docker
+        DOCKER_HUB_USER = 'taha246'
+        DOCKER_IMAGE_NAME = 'timesheet-devops'
+        DOCKER_IMAGE_TAG = "${env.BUILD_NUMBER}"
+        DOCKER_IMAGE_FULL = "${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+        DOCKER_IMAGE_LATEST = "${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:latest"
     }
     
     options {
@@ -50,6 +56,9 @@ pipeline {
                     echo ""
                     echo "Git Version:"
                     git --version
+                    echo ""
+                    echo "Docker Version:"
+                    docker --version || echo "Docker non disponible"
                     echo ""
                     echo "Working Directory:"
                     pwd
@@ -124,6 +133,71 @@ pipeline {
             }
         }
         
+        stage('Docker Build & Push') {
+            when {
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
+            steps {
+                echo '🐳 Construction de l\'image Docker...'
+                script {
+                    // Vérifier que Docker est disponible
+                    sh 'docker --version'
+                    
+                    // Construire l'image Docker
+                    echo "🔨 Build de l'image: ${env.DOCKER_IMAGE_FULL}"
+                    sh "docker build -t ${env.DOCKER_IMAGE_FULL} -t ${env.DOCKER_IMAGE_LATEST} ."
+                    
+                    // Lister les images créées
+                    sh 'docker images | grep timesheet-devops'
+                }
+            }
+            post {
+                success {
+                    echo '✅ Image Docker construite avec succès!'
+                }
+                failure {
+                    echo '❌ Échec de la construction de l\'image Docker!'
+                }
+            }
+        }
+        
+        stage('Docker Login & Push') {
+            when {
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
+            steps {
+                echo '🔐 Connexion à Docker Hub...'
+                script {
+                    // Se connecter à Docker Hub avec le token
+                    // Le token est passé via les credentials Jenkins (ID: docker-hub-token)
+                    withCredentials([string(credentialsId: 'docker-hub-token', variable: 'DOCKER_TOKEN')]) {
+                        sh "echo ${DOCKER_TOKEN} | docker login -u ${env.DOCKER_HUB_USER} --password-stdin"
+                    }
+                    
+                    // Push l'image avec le tag du build
+                    echo "📤 Push de l'image: ${env.DOCKER_IMAGE_FULL}"
+                    sh "docker push ${env.DOCKER_IMAGE_FULL}"
+                    
+                    // Push l'image avec le tag latest
+                    echo "📤 Push de l'image latest: ${env.DOCKER_IMAGE_LATEST}"
+                    sh "docker push ${env.DOCKER_IMAGE_LATEST}"
+                    
+                    echo "✅ Images poussées vers Docker Hub:"
+                    echo "   - ${env.DOCKER_IMAGE_FULL}"
+                    echo "   - ${env.DOCKER_IMAGE_LATEST}"
+                    echo "   URL: https://hub.docker.com/r/${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}"
+                }
+            }
+            post {
+                success {
+                    echo '✅ Images Docker poussées vers Docker Hub avec succès!'
+                }
+                failure {
+                    echo '❌ Échec du push vers Docker Hub!'
+                }
+            }
+        }
+        
         stage('Archive Artifacts') {
             when {
                 expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
@@ -169,9 +243,13 @@ pipeline {
         success {
             echo '✅ ✅ ✅ BUILD RÉUSSI! ✅ ✅ ✅'
             echo "📦 Artefacts disponibles dans: ${env.BUILD_URL}artifact/"
+            echo "🐳 Image Docker disponible sur Docker Hub:"
+            echo "   - ${env.DOCKER_IMAGE_FULL}"
+            echo "   - ${env.DOCKER_IMAGE_LATEST}"
+            echo "   URL: https://hub.docker.com/r/${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}"
             script {
                 // Notification de succès (peut être étendu avec email, Slack, etc.)
-                currentBuild.description = "✅ Succès - Commit: ${env.GIT_COMMIT}"
+                currentBuild.description = "✅ Succès - Commit: ${env.GIT_COMMIT} - Docker: ${env.DOCKER_IMAGE_FULL}"
             }
         }
         failure {

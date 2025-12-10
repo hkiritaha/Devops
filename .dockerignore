@@ -1,0 +1,35 @@
+# Fichiers et répertoires à exclure lors de la construction de l'image Docker
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+README.md
+GUIDE_*.md
+QUICK_*.md
+
+# IDE
+.idea
+.vscode
+*.iml
+*.swp
+*.swo
+
+# Jenkins
+Jenkinsfile
+
+# Logs
+*.log
+logs/
+
+# Tests
+src/test/
+target/test-classes/
+
+# Fichiers temporaires
+*.tmp
+*.bak
+.DS_Store
+
