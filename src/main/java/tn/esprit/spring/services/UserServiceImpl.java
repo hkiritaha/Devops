@@ -22,8 +22,14 @@ public class UserServiceImpl implements IUserService {
 
 	@Override
 	public List<User> retrieveAllUsers() { 
-
-		return null;
+		try {
+			// TODO Log à ajouter en début de la méthode 
+			return userRepository.findAll();
+			// TODO Log à ajouter à la fin de la méthode 
+		} catch (Exception e) {
+			// TODO log ici : l....("error in retrieveAllUsers() : " + e);
+			return new java.util.ArrayList<>();
+		}
 	}
 
 
