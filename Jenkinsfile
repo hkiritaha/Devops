@@ -17,8 +17,6 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '10'))
         // Afficher les timestamps dans les logs
         timestamps()
-        // Afficher les couleurs dans la console
-        ansiColor('xterm')
         // Timeout de 30 minutes pour le pipeline complet
         timeout(time: 30, unit: 'MINUTES')
     }
@@ -84,13 +82,6 @@ pipeline {
                 always {
                     // Publier les résultats des tests même en cas d'échec
                     junit 'target/surefire-reports/*.xml'
-                    // Publier les rapports de couverture de code (si configuré)
-                    publishHTML([
-                        reportDir: 'target/site/jacoco',
-                        reportFiles: 'index.html',
-                        reportName: 'Rapport de couverture',
-                        keepAll: true
-                    ])
                 }
                 success {
                     echo '✅ Tous les tests sont passés!'
@@ -129,9 +120,7 @@ pipeline {
                 echo '💾 Archivage des artefacts...'
                 script {
                     // Archiver le JAR principal
-                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true, allowEmptyArchive: false
-                    // Archiver les sources (optionnel)
-                    archiveArtifacts artifacts: 'target/*-sources.jar', fingerprint: true, allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
                 }
             }
         }
@@ -164,9 +153,6 @@ pipeline {
             echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
             echo "🏁 Pipeline terminé - Build #${env.BUILD_NUMBER}"
             echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
-            
-            // Nettoyer le workspace (optionnel)
-            cleanWs()
         }
         success {
             echo '✅ ✅ ✅ BUILD RÉUSSI! ✅ ✅ ✅'
