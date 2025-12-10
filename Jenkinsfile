@@ -16,6 +16,8 @@ pipeline {
         DOCKER_IMAGE_TAG = "${env.BUILD_NUMBER}"
         DOCKER_IMAGE_FULL = "${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
         DOCKER_IMAGE_LATEST = "${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:latest"
+        // Configuration GitHub
+        GITHUB_REPO_URL = 'https://github.com/hkiritaha/Devops.git'
     }
     
     options {
@@ -226,6 +228,12 @@ pipeline {
                     ║ Auteur      : ${env.GIT_AUTHOR}                     ║
                     ║ Timestamp   : ${env.BUILD_TIMESTAMP}                ║
                     ║ Statut      : ${currentBuild.currentResult}        ║
+                    ╠═══════════════════════════════════════════════════════╣
+                    ║           IMAGE DOCKER                                ║
+                    ╠═══════════════════════════════════════════════════════╣
+                    ║ Image       : ${env.DOCKER_IMAGE_FULL}              ║
+                    ║ Latest      : ${env.DOCKER_IMAGE_LATEST}            ║
+                    ║ URL         : https://hub.docker.com/r/${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}
                     ╚═══════════════════════════════════════════════════════╝
                     """
                     echo buildInfo
